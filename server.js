@@ -12,7 +12,7 @@ const app=express();
 app.use(bodyParser.urlencoded({extended:true}));
 
 //connect mongoDB:mongodb+srv://RedBack:<password>@cluster-redback.pa0yu.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
-mongoose.connect("mongodb+srv://RedBack:RedBack2022@cluster-redback.pa0yu.mongodb.net/userDatabase?retryWrites=true&w=majority", {useNewUrlParser: true})
+mongoose.connect("mongodb+srv://RedBack:<password>@cluster-redback.pa0yu.mongodb.net/userDatabase?retryWrites=true&w=majority", {useNewUrlParser: true})
 
 //send value to MongoDB
 app.post('/user',(req,res)=>{
