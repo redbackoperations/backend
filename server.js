@@ -13,7 +13,7 @@ const app=express();
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.json());
 //connect mongoDB:mongodb+srv://RedBack:<password>@cluster-redback.pa0yu.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
-const URI = process.env.PROTOCOL + "://" + process.env.USER + ":" + process.env.PASSWORD + "@" + process.env.HOST + process.env.CONNECTIONOPTIONS
+const URI = process.env.PROTOCOL + "://" + process.env.USER + ":" + process.env.PASS + "@" + process.env.HOST + process.env.CONNECTIONOPTIONS;
 mongoose.connect(URI, {useNewUrlParser: true})
 
 //send value to MongoDB
