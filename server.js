@@ -5,6 +5,7 @@ const mongoose=require("mongoose")
 const User=require("./models/User")
 const validator=require("validator")
 //const bcrypt=require("bcrypt")
+require('dotenv').config();
 const saltRounds=10
 
 //app
@@ -12,7 +13,8 @@ const app=express();
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(express.json());
 //connect mongoDB:mongodb+srv://RedBack:<password>@cluster-redback.pa0yu.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
-mongoose.connect("mongodb+srv://RedBack:<password>@cluster-redback.pa0yu.mongodb.net/userDatabase?retryWrites=true&w=majority", {useNewUrlParser: true})
+const URI = process.env.PROTOCOL + "://" + process.env.USER + ":" + process.env.PASSWORD + "@" + process.env.HOST + process.env.CONNECTIONOPTIONS
+mongoose.connect(URI, {useNewUrlParser: true})
 
 //send value to MongoDB
 
