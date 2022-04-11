@@ -4,7 +4,7 @@ const https=require("https")
 const mongoose=require("mongoose")
 const User=require("./models/User")
 const validator=require("validator")
-//const bcrypt=require("bcrypt")
+const bcrypt=require("bcrypt")
 require('dotenv').config();
 const saltRounds=10
 
@@ -19,12 +19,14 @@ mongoose.connect(URI, {useNewUrlParser: true})
 //send value to MongoDB
 
 app.post('/user',(req,res)=>{
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hash = bcrypt.hashSync(req.body.password, salt);
     const user=new User({
         username:req.body.username,
         firstname:req.body.firstname,
         lastname:req.body.lastname,
         email: req.body.email,
-        password:req.body.password,
+        password:hash,
         redbackCoins:req.body.redbackCoins,
         telephone:req.body.telephone,
         userLevel:req.body.userLevel,
@@ -85,6 +87,6 @@ app.patch('/user/:id',(req, res)=>{
     )
 })
 //listen to 8080 port
-app.listen(8080,function(req,res){
-    console.log("Web server is running in 8080...");
+app.listen(process.env.PORT,function(req,res){
+    console.log("Web server is running in " + process.env.PORT + "...");
 })
