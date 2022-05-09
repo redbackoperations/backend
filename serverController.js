@@ -15,6 +15,14 @@ async function PostNewUser(req, res) {
     try {
         const salt = bcrypt.genSaltSync(saltRounds);
         const hash = bcrypt.hashSync(req.body.password, salt);
+
+        var img = fs.readFileSync("./uploads/default.jpg");
+        var encode_img = img.toString('base64');
+        var final_img = {
+            contentType:"image/jpeg",
+            data:new Buffer(encode_img,'base64')
+        };
+
         const user=new User({
             username:req.body.username,
             firstname:req.body.firstname,
@@ -24,6 +32,7 @@ async function PostNewUser(req, res) {
             redbackCoins:req.body.redbackCoins,
             telephone:req.body.telephone,
             userLevel:req.body.userLevel,
+            img:final_img
         });
         var followers = {
             username: req.body.followUser,
@@ -44,7 +53,7 @@ async function PostNewUser(req, res) {
                     res.send("Something wrong?");
                 }
     } catch (err) {
-        console.error(`Error while getting all users:`, err.message);
+        console.error(`Error while posting new user:`, err.message);
     }
 }
 
@@ -113,7 +122,7 @@ async function DeleteUserID(req, res) {
     }
 }
 
-//change with user id or username
+//change with user ID or username
 async function UpdateUser(req, res) {
     try {
         const salt = bcrypt.genSaltSync(saltRounds);
@@ -135,7 +144,9 @@ async function UpdateUser(req, res) {
                             email: req.body.email,}
                         },(err)=>{
                                 if(!err){res.send('Successfully update a user with username')}
-                                else res.send(err);
+                                else {
+                                    res.send("User does not exist");
+                                }
                             }
                     )
                 }
@@ -146,6 +157,7 @@ async function UpdateUser(req, res) {
     }
 }
 
+//Upload picture for certain user with user ID or username
 async function UploadUserPicture(req, res) {
     try {
         var img = fs.readFileSync(req.file.path);
@@ -161,10 +173,20 @@ async function UploadUserPicture(req, res) {
             {$set:{img:final_img
                 }},
             (err)=>{
-                if (!err) {
-                   res.send('Successfully upload a picture for a user')
+                if (!err) {res.send('Successfully upload a picture for a user with user id')}
+                else {
+                    User.update(
+                        {username: req.params.id},
+                        {$set:{img:final_img
+                            }},
+                        (err)=>{
+                            if (!err) {res.send('Successfully upload a picture for a user with username')}
+                            else {
+                                res.send("User does not exist")
+                            }
+                        }
+                    )
                 }
-                else res.send(err)
             }
         )
     } catch (err) {
@@ -172,12 +194,23 @@ async function UploadUserPicture(req, res) {
     }
 }
 
+// Get profile picture with user ID or username
 async function GetUserPicture(req, res) {
     try {
-        User.findById( req.params.id, (err,user)=> {
-            if (err) return next(err);
-            res.contentType(user.img.contentType);
-            res.send(user.img.data);
+        User.findById(req.params.id, (err,user)=> {
+            if (!err) {
+                res.contentType(user.img.contentType);
+                res.send(user.img.data);
+            } else {
+                User.findOne({username:req.params.id},(err,user)=>{
+                    if (user) {
+                        res.contentType(user.img.contentType);
+                        res.send(user.img.data);
+                    } else {
+                        res.send(err);
+                    }
+                })
+            }
         });
     } catch (err) {
         console.error(`Error while getting user picture:`, err.message);
