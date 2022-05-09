@@ -20,7 +20,7 @@ mongoose.connect(URI, {useNewUrlParser: true})
 
 //send value to MongoDB
 
-app.post('/user',(req,res)=>{
+app.post('/signup',(req,res)=>{
     const salt = bcrypt.genSaltSync(saltRounds);
     const hash = bcrypt.hashSync(req.body.password, salt);
     const user=new User({
@@ -41,15 +41,15 @@ app.post('/user',(req,res)=>{
         username: req.body.following,
     };
     user.following.push(following);
-    user.save().catch((err) => console.log(err));
+    user.save().catch((err) => res.send(err));
 
 if (res.statusCode === 200)
         {
-            console.log("Success send!");
+            res.send("Success send!");
         }
         else 
         {
-            console.log("Something wrong?");
+            res.send("Something wrong?");
         }
 
 })
@@ -63,7 +63,7 @@ app.get( '/user',(req, res)=>{
     })
 
 //find a user with username
-app.get( '/username/:username',(req, res)=>{
+app.get( '/login/:username',(req, res)=>{
     User.findOne({username: req.params.username},['password'], (err, list)=>{
         if (list) (res.send(list.password))
         else res.send("Cannot find username")
@@ -71,37 +71,64 @@ app.get( '/username/:username',(req, res)=>{
     })
 
 
-//find specific user with user ID
+//find specific user with user ID or username
 app.get('/user/:id', (req, res) => {
     User.findOne({_id: req.params.id}, (err, list)=>{
         if (list) (res.send(list))
-        else res.send("Cannot find user id")
+        else {
+            User.findOne({username:req.params.id},(err,list)=>{
+                if(list){
+                    res.send(list)
+                }
+                else res.send("Cannot find a user with given id or username")
+            })
+        }
     })
 })
 
-//delet with user ID
+//delet with user ID or username
 app.delete('/user/:id',  (req, res) => {
     User.deleteOne({_id: req.params.id}, function(err, list) {
         if (err) {
-          res.send("Cannot find user id");
+            User.deleteOne({username:req.params.id},function(err,list){
+                if(err){
+                    res.send("Cannot find user id or username");
+                }
+                else{
+                    res.send(list);
+                }
+            })
+          
         } else {
           res.send(list);
         }
       });
 })
 
-//change with user id
+//change with user id or username
 app.patch('/user/:id',(req, res)=>{
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hash = bcrypt.hashSync(req.body.password, salt);
     User.update(
         {_id: req.params.id},
         {$set:{username: req.body.username,
-            password: req.body.password,
+            password: hash,
             telephone : req.body.telephone,
             email: req.body.email,
             }},
         (err)=>{
-            if (!err) {res.send('Successfully update a user')}
-            else res.send(err)
+            if (!err) {res.send('Successfully update a user with user id')}
+            else {
+                User.update({username:req.params.id},
+                    { $set:{username:req.body.username,
+                        password:hash,
+                        telephone : req.body.telephone,
+                        email: req.body.email,}},(err)=>{
+                            if(!err){res.send('Successfully update a user with username')}
+                            else res.send(err);
+                        }
+                        )
+            }
         }
     )
 })
