@@ -7,6 +7,10 @@ const validator=require("validator")
 const bcrypt=require("bcrypt")
 const fs=require("fs")
 const { match } = require("assert")
+const jwt = require("jsonwebtoken")
+require("dotenv").config()
+
+const port = process.env.TOKEN_SERVER_PORT
 multer = require("multer")
 require('dotenv').config();
 const saltRounds=10
@@ -58,19 +62,18 @@ async function PostNewUser(req, res) {
     }
 }
 
-async function PostLogin(req, res) {
+//login with username and password (generates access token)
+function PostLogin(req, res) {
     try {
-        // const salt = bcrypt.genSaltSync(saltRounds);
-        // const hash = bcrypt.hashSync(req.body.password, salt);
-        // const user=new User({
-        //     username:req.body.username,
-        //     password:hash,
-        // });
-        const user= User.findOne({username: req.body.username},(err,list)=>{
+        User.findOne({username: req.body.username},async (err,list)=>{
             if (list == null) res.status(404).send("User does not exist")
-            if (bcrypt.compare(req.body.password, list.password))
+            const match = bcrypt.compare(req.body.password, list.password)
+            if (await bcrypt.compare(req.body.password, list.password))
             {
-                res.send(list.password)
+                const accessToken = generateAccessToken ({user: req.body.name})
+                const refreshToken = generateRefreshToken ({user: req.body.name})
+                res.json ({accessToken: accessToken, refreshToken: refreshToken})
+
             }
             else{
                 res.status(401).send("Password Incorrect")
@@ -81,6 +84,7 @@ async function PostLogin(req, res) {
         console.error(`Error while sending login request:`, err.message);
     }
 }
+
 //find all user
 async function FindAllUser(req, res) {
     try {
@@ -240,7 +244,34 @@ async function GetUserPicture(req, res) {
         console.error(`Error while getting user picture:`, err.message);
     }
 }
+function generateAccessToken(user) {
+    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "15m"}) 
+    }
+    // refreshTokens
+    let refreshTokens = []
+    function generateRefreshToken(user) {
+    const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, {expiresIn: "20m"})
+    refreshTokens.push(refreshToken)
+    return refreshToken
+    }
+    
 
+function RefreshToken(req,res) {
+    if (!refreshTokens.includes(req.body.token)) res.status(400).send("Refresh Token Invalid")
+    refreshTokens = refreshTokens.filter( (c) => c != req.body.token)
+    //remove the old refreshToken from the refreshTokens list
+    const accessToken = generateAccessToken ({user: req.body.username})
+    const refreshToken = generateRefreshToken ({user: req.body.username})
+    //generate new accessToken and refreshTokens
+    res.json ({accessToken: accessToken, refreshToken: refreshToken})
+
+}
+
+function Logout(req,res) {
+    refreshTokens = refreshTokens.filter ( (c) => c!= req.body.token)
+
+    res.status(204).send("Logged out")
+}
 module.exports = {
     PostNewUser,
     PostLogin,
@@ -250,5 +281,7 @@ module.exports = {
     DeleteUserID,
     UpdateUser,
     UploadUserPicture,
-    GetUserPicture
+    GetUserPicture,
+    RefreshToken,
+    Logout
 }
