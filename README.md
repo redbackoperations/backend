@@ -1,5 +1,5 @@
 # backend
-Backend server code.
+Backend server code
 
 ## Setup instructions
 
