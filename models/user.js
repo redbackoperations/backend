@@ -20,8 +20,6 @@ const userSchema = new mongoose.Schema(
         followers: [{username : String }],
         following: [{username : String }],
         img:{data:Buffer,contentType: String}
-
-
     }
 )
 module.exports  =  mongoose.model("User", userSchema)
