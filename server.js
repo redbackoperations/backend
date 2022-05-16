@@ -10,6 +10,9 @@ multer = require("multer")
 require('dotenv').config();
 const saltRounds=10
 const controller=require("./serverController")
+const Msg=require("./models/Msg")
+const mqtt = require('mqtt')
+
 
 //app
 const app=express();
@@ -70,6 +73,44 @@ app.get('/user/:id/picture', (req,res,next)=> {
     controller.GetUserPicture(req, res)
 });
 
+const host = '34.129.191.60'
+const port = '1883'
+const clientId = `mqtt_${Math.random().toString(16).slice(3)}`
+
+const connectUrl = `mqtt://${host}:${port}`
+const client = mqtt.connect(connectUrl, {
+  clientId,
+  clean: true,
+  connectTimeout: 4000,
+  username: 'emqx',
+  password: 'public',
+  reconnectPeriod: 1000,
+})
+
+const topic = '/nodejs/mqtt'
+client.on('connect', () => {
+  console.log('Connected')
+  client.subscribe([topic], () => {
+    console.log(`Subscribe to topic '${topic}'`)
+  })
+  client.publish(topic, 'nodejs mqtt test', { qos: 0, retain: false }, (error) => {
+    if (error) {
+      console.error(error)
+    }
+  })
+})
+client.on('message', (topic, payload) => {
+  console.log('Received Message:', topic, payload.toString())
+  const msg=new Msg({message:payload.toString().trim()})
+  msg.save();
+  console.error(`消息:"${payload.toString()}",已入库！`)
+})
+
+app.get('/mqtt',(req, res)=>{
+  Msg.find((err, list)=>{
+    if (err) {res.send(err)}
+    else {res.send(list)}
+})})
 //listen to 8080 port
 app.listen(process.env.SERVER_PORT,function(req,res){
     console.log("Web server is running in " + process.env.SERVER_PORT + "...");
