@@ -47,10 +47,9 @@ async function PostNewUser(req, res) {
             username: req.body.following,
         };
         user.following.push(following);
-        User.findOne({ $or:[{username: req.body.username},{email: req.body.email}]}, function (err, list) {
-            if (list===null){
-                user.save().catch((err) => res.send(err));
-                if (res.statusCode === 200)
+        user.save().catch((err) => res.send(err));
+    
+        if (res.statusCode === 200)
                 {
                     res.send("Success send!");
                 }
@@ -58,12 +57,6 @@ async function PostNewUser(req, res) {
                 {
                     res.send("Something wrong?");
                 }
-            }
-            else
-            {
-                res.status(401).send("User name or email already exist");
-            }
-        });
     } catch (err) {
         console.error(`Error while posting new user:`, err.message);
     }
